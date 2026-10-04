@@ -92,20 +92,24 @@ class BarberiaMonitor:
         # """
         # Invocado cíclicamente por el hilo Barbero.
         # """
+    
         with self.lock:
-            # Mientras no haya nadie en el sillón y la barbería siga abierta
-            while not self.cliente_listo_en_sillon and self.barberia_abierta:
+            # Mientras no haya nadie sentado en el sillón de corte
+            while not self.cliente_listo_en_sillon:
+                # Si cerraron la barbería y no hay nadie en el sillón, termina inmediatamente
+                if not self.barberia_abierta:
+                    print("🏁 La barbería cerró. El barbero recoge sus herramientas y se va a casa.")
+                    return False
+
                 if self.clientes_esperando == 0:
                     print("😴 El barbero no ve clientes y se duerme en su sillón...")
                 else:
                     self.cond_sala_espera.notify()
+
                 self.cond_barbero.wait()
-                
-            if not self.barberia_abierta and not self.cliente_listo_en_sillon and self.clientes_esperando == 0:
-                print("🏁 La barbería cerró. El barbero recoge sus herramientas y se va a casa.")
-                return False
-                
+
             return True
+
 
     # Alias pedagógico
     esperar_cliente_para_corte = atender_siguiente_cliente
