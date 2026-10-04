@@ -25,10 +25,10 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 class BarberiaMonitor:
-    """
-    Implementación del problema del Barbero Dormilón utilizando el concepto de MONITOR
-    mediante variables de condición de Python (threading.Condition).
-    """
+    # """
+    # Implementación del problema del Barbero Dormilón utilizando el concepto de MONITOR
+    # mediante variables de condición de Python (threading.Condition).
+    # """
     def __init__(self, num_sillas_espera=3):
         self.num_sillas = num_sillas_espera
         self.clientes_esperando = 0
@@ -45,10 +45,10 @@ class BarberiaMonitor:
         self.barberia_abierta = True
 
     def entrar_cliente(self, cliente_id):
-        """
-        Invocado por el hilo Cliente al llegar a la barbería.
-        Retorna True si fue atendido, False si la barbería estaba llena y se marchó.
-        """
+        # """
+        # Invocado por el hilo Cliente al llegar a la barbería.
+        # Retorna True si fue atendido, False si la barbería estaba llena y se marchó.
+        # """
         with self.lock:
             print(f"👤 Cliente {cliente_id} llega a la barbería. (Sillas ocupadas: {self.clientes_esperando}/{self.num_sillas})")
             
@@ -89,9 +89,9 @@ class BarberiaMonitor:
             return True
 
     def atender_siguiente_cliente(self):
-        """
-        Invocado cíclicamente por el hilo Barbero.
-        """
+        # """
+        # Invocado cíclicamente por el hilo Barbero.
+        # """
         with self.lock:
             # Mientras no haya nadie en el sillón y la barbería siga abierta
             while not self.cliente_listo_en_sillon and self.barberia_abierta:
@@ -111,9 +111,9 @@ class BarberiaMonitor:
     esperar_cliente_para_corte = atender_siguiente_cliente
 
     def finalizar_corte(self):
-        """
-        El barbero avisa al cliente que terminó su corte de pelo.
-        """
+        # """
+        # El barbero avisa al cliente que terminó su corte de pelo.
+        # """
         with self.lock:
             self.corte_terminado = True
             self.cond_corte.notify()

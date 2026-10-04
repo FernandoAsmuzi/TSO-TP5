@@ -44,6 +44,92 @@ Encontrar la secuencia lógica y los valores iniciales de los semáforos que per
 1. En cada caso, define la cantidad de semáforos necesarios y su inicialización.
 2. Escribe el pseudocódigo de cada proceso involucrado con sus llamadas a `wait()` y `signal()`.
 
+1. Secuencia con Prioridad Fija
+
+      sem_A = Semaforo(1): Semaforo binario para iniciar.
+      sem_B = Semaforo(0): Semaforo binario. Bloquea a B hasta que A termine.
+      sem_C = Semaforo(0): Semaforo binario. Bloquea a C hasta que B termine.
+
+   Proceso A():
+      repetir:
+         wait(sem_A)
+         // Codigo A
+         emitir_A()
+         signal(sem_B)
+
+   Proceso B():
+      repetir:
+         wait(sem_B)
+         // Codigo B
+         emitir_B()
+         signal(sem_C)
+
+   Proceso C():
+      repetir:
+         wait(sem_C)
+         // Codigo C
+         emitir_C()
+         signal(sem_A)
+
+2. Secuencia Alternada
+
+      sem_A = Semáforo(1): Semáforo binario. Permite la ejecución de A.
+      sem_B = Semáforo(0): Semáforo binario. Habilita el turno de B.
+      sem_C = Semáforo(0): Semáforo binario. Habilita el turno de C.
+      turno_B = true: Variable booleana.
+
+   Proceso A():
+      repetir:
+         wait(sem_A)
+         // SC A
+         emitir_A()
+         si turno_B == true entonces:
+               signal(sem_B)
+               turno_B = false
+         sino:
+               signal(sem_C)
+               turno_B = true
+
+   Proceso B():
+      repetir:
+         wait(sem_B)
+         // SC B
+         emitir_B()
+         signal(sem_A)
+
+   Proceso C():
+      repetir:
+         wait(sem_C)
+         // SC C
+         emitir_C()
+         signal(sem_A)
+
+3. Secuencia con No-Determinismo Regulado
+
+      sem_emisor = Semáforo(1): Semáforo binario. Emisores que permiten la ejecucion.
+      sem_receptor = Semáforo(0): Semáforo binario. Espera al emisor.
+   
+   Proceso A():
+      repetir:
+         wait(sem_emisor)
+         // SC A
+         emitir_A()
+         signal(sem_receptor)
+
+   Proceso B():
+      repetir:
+         wait(sem_emisor)
+         // SC B
+         emitir_B()
+         signal(sem_receptor)
+
+   Proceso C():
+      repetir:
+         wait(sem_receptor)
+         // SC C
+         emitir_C()
+         signal(sem_emisor)
+
 ---
 
 ## Problema 2: El Comedor Escolar (Recursos Heterogéneos)
@@ -54,6 +140,42 @@ En un colegio hay un comedor con capacidad para 18 personas. El estudiante, cuan
 1. Identifica los semáforos necesarios y su valor de inicialización.
 2. Escribe el pseudocódigo del proceso `Estudiante()`.
 
+   capacidad_comedor = Semáforo(18): Semáforo contador. Controla el límite de ocupación total del salón.
+
+   mostradores_comida = Semáforo(2): Semáforo contador. Controla el acceso a los 2 puestos de entrega de bandejas de comida.
+
+   abridores = Semáforo(3): Semáforo contador. Controla el uso de los 3 abridores disponibles.
+
+   mostradores_postre = Semáforo(2): Semáforo contador. Controla el acceso a los 2 puestos de distribución de postre.
+
+   Proceso Estudiante():
+      // Ingreso al comedor
+      wait(capacidad_comedor)
+
+      // Elegir comida
+      wait(mostradores_comida)
+      // Elegir mostrador
+      signal(mostradores_comida)
+
+      // Selección de bebida
+      bebida = elegir_bebida() // 'coca_cola' o 'agua'
+      si bebida == 'coca_cola' entonces:
+         wait(abridores)
+         // Abrir botella de gaseosa
+         signal(abridores)
+      
+      // Ingerir la comida
+
+      // Postre opcional
+      quiere_postre = decidir_postre() // bool
+      si quiere_postre == true entonces:
+         wait(mostradores_postre)
+         // Elegir plato de postre
+         signal(mostradores_postre)
+         // Comer postre...
+
+      // Salida del comedor
+      signal(capacidad_comedor)
 ---
 
 ## Problema 3: El Puente Levadizo (Monitores y Prioridad)
@@ -65,3 +187,58 @@ Tenemos un puente levadizo sobre un río con las siguientes condiciones de utili
 **Tu tarea:**
 1. Diseña la solución utilizando **Monitores** (variables de condición).
 2. Escribe el pseudocódigo para los métodos `entrar_coche()`, `salir_coche()`, `entrar_barco()`, `salir_barco()`.
+
+      coches_puente = 0: Número de coches circulando sobre el puente.
+
+      barcos_puente = 0: Vale 1 si hay un barco cruzando (puente levantado), 0 si no.
+
+      barcos_esperando = 0: Barcos en cola que requieren pasar, prioridad sobre los coches.
+
+      cola_coches: Donde se suspenden los coches cuando hay barcos pasando o esperando cruzar.
+
+      cola_barcos: Donde se suspenden los barcos mientras haya coches sobre el puente o un barco previo esté pasando.
+
+   Monitor PuenteLevadizo:
+      variables:
+         coches_puente: entero = 0
+         barcos_puente: entero = 0
+         barcos_esperando: entero = 0
+         cola_coches: Condicion
+         cola_barcos: Condicion
+
+      // --- MÉTODOS PARA COCHES ---
+
+      entrar_coche():
+         // Un coche solo entra si no hay barcos pasando NI esperando cruzar
+         mientras barcos_puente > 0 o barcos_esperando > 0 hacer:
+               cola_coches.wait()
+         coches_puente = coches_puente + 1
+
+      salir_coche():
+         coches_puente = coches_puente - 1
+         // Si no quedan coches y hay barcos esperando, se despierta a un barco
+         si coches_puente == 0 y barcos_esperando > 0 entonces:
+               cola_barcos.signal()
+         // Si no hay barcos esperando, pueden avanzar coches rezagados
+         sino si barcos_esperando == 0 entonces:
+               cola_coches.signal()
+
+      // --- MÉTODOS PARA BARCOS ---
+
+      entrar_barco():
+         barcos_esperando = barcos_esperando + 1
+         // Un barco debe esperar a que el puente quede completamente vacío de coches
+         // y a que ningún otro barco esté cruzando actualmente
+         mientras coches_puente > 0 o barcos_puente > 0 hacer:
+               cola_barcos.wait()
+         barcos_esperando = barcos_esperando - 1
+         barcos_puente = 1
+
+      salir_barco():
+         barcos_puente = 0
+         // Como los barcos tienen prioridad absoluta:
+         si barcos_esperando > 0 entonces:
+               cola_barcos.signal()
+         sino:
+               // Si no hay más barcos, se habilita el paso a todos los coches en espera
+               cola_coches.signal()

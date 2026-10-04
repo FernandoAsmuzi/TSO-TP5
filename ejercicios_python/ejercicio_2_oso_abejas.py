@@ -28,9 +28,9 @@ simulacion_activa = True
 # - Un cerrojo (Lock) o semáforo binario para exclusión mutua en el tarro.
 # - Un semáforo para despertar al oso cuando el tarro esté lleno.
 # - Un semáforo para que las abejas esperen si el tarro está lleno o el oso está comiendo.
-# mutex = threading.Lock()
-# sem_oso = threading.Semaphore(0)
-# sem_tarro_disponible = threading.Semaphore(1)
+mutex = threading.Lock()
+sem_oso = threading.Semaphore(0)
+sem_tarro_disponible = threading.Semaphore(1)
 
 def abeja(id_abeja):
     global tarro_miel, simulacion_activa
@@ -43,6 +43,21 @@ def abeja(id_abeja):
         # 3. Depositar una porción de miel (tarro_miel += 1).
         # 4. Si tarro_miel == M, avisar/despertar al oso dormido.
         # 5. Si no está lleno, permitir que otras abejas sigan produciendo.
+        sem_tarro_disponible.acquire()
+
+        if not simulacion_activa:
+            sem_tarro_disponible.release()
+            break
+
+        with mutex:
+            tarro_miel += 1
+            print(f"🐝 Abeja {id_abeja} depositó miel. Tarro: {tarro_miel}/{M}")
+            if tarro_miel == M:
+                print("🐻 El tarro está lleno! Despertando al oso...")
+                sem_oso.release()
+            else:
+                sem_tarro_disponible.release()
+
         pass
 
 def oso(max_tarros=2):
@@ -54,15 +69,38 @@ def oso(max_tarros=2):
         # tarro_miel = 0
         # print("🐻 El oso vuelve a dormir.")
         # TODO: Avisar a las abejas que el tarro está vacío y disponible nuevamente.
+        sem_oso.acquire()
+        print("🐻 El oso se despierta y se come toda la miel!")
+        tarro_miel = 0
         tarros_comidos += 1
         time.sleep(0.1)
+        print("🐻 El oso vuelve a dormir.")
+
+        sem_tarro_disponible.release()  # Permitir que las abejas llenen el tarro nuevamente
         
     simulacion_activa = False
+    sem_tarro_disponible.release()  # Desbloquear a las abejas que puedan estar esperando
 
 if __name__ == "__main__":
     print("=" * 60)
     print(" Iniciando Simulación: El Oso y las Abejas (UNJu FI)")
     print("=" * 60)
     # TODO: Crear e iniciar los hilos para el oso y las N abejas
+
+    hilo_oso = threading.Thread(target=oso, args=(2,))
+    hilo_oso.start()
+
+    hilos_abejas = []
+    for i in range(NUM_ABEJAS):
+        hilo_abeja = threading.Thread(target=abeja, args=(i+1,))
+        hilos_abejas.append(hilo_abeja)
+        hilo_abeja.start()
+
+    hilo_oso.join()
+
+    for hilo in hilos_abejas:
+        hilo.join()
+
+    print(" Simulación finalizada.")
     pass
 

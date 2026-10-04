@@ -9,9 +9,13 @@ Bibliografía de Referencia:
 - Stallings: Cap. 5.6 (Problema de los filósofos comensales)
 """
 
+import sys
 import threading
 import time
 import random
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 NUM_FILOSOFOS = 5
 # Cada tenedor está representado por un Lock (exclusión mutua)
@@ -36,23 +40,23 @@ def comer(id):
     log(f"✨ Filósofo {id} terminó de comer (total comidas: {comidas[id]}).")
 
 def filosofo(id, rondas=3):
-    """
-    Representa el ciclo de vida de un filósofo: pensar -> tomar tenedores -> comer -> soltar tenedores.
+    # """
+    # Representa el ciclo de vida de un filósofo: pensar -> tomar tenedores -> comer -> soltar tenedores.
     
-    CONSIGNA:
-    Si todos los filósofos toman primero su tenedor izquierdo y luego el derecho:
-        izq = id
-        der = (id + 1) % NUM_FILOSOFOS
-    se produce un DEADLOCK (interbloqueo) si todos toman su tenedor izquierdo simultáneamente.
+    # CONSIGNA:
+    # Si todos los filósofos toman primero su tenedor izquierdo y luego el derecho:
+    #     izq = id
+    #     der = (id + 1) % NUM_FILOSOFOS
+    # se produce un DEADLOCK (interbloqueo) si todos toman su tenedor izquierdo simultáneamente.
     
-    TODO PARA EL ESTUDIANTE:
-    Implementa una solución para prevenir el Deadlock rompiendo una de las condiciones de Coffman
-    (por ejemplo, la 'Espera Circular' usando una estrategia asimétrica):
-    - Si el filósofo es el último (id == NUM_FILOSOFOS - 1) o es impar, que tome primero el tenedor
-      DERECHO y luego el IZQUIERDO.
-    - Los demás filósofos toman primero el IZQUIERDO y luego el DERECHO.
-    - Alternativamente, puedes usar un semáforo contador (árbitro/mozo) que permita un máximo de 4 comensales.
-    """
+    # TODO PARA EL ESTUDIANTE:
+    # Implementa una solución para prevenir el Deadlock rompiendo una de las condiciones de Coffman
+    # (por ejemplo, la 'Espera Circular' usando una estrategia asimétrica):
+    # - Si el filósofo es el último (id == NUM_FILOSOFOS - 1) o es impar, que tome primero el tenedor
+    #   DERECHO y luego el IZQUIERDO.
+    # - Los demás filósofos toman primero el IZQUIERDO y luego el DERECHO.
+    # - Alternativamente, puedes usar un semáforo contador (árbitro/mozo) que permita un máximo de 4 comensales.
+    # """
     for _ in range(rondas):
         pensar(id)
         
@@ -66,10 +70,12 @@ def filosofo(id, rondas=3):
         
         # PISTA DE IMPLEMENTACIÓN ASIMÉTRICA:
         if id == NUM_FILOSOFOS - 1:
-            primero, segundo = tenedor_der, tenedor_izq
+            primero = tenedor_der
+            segundo = tenedor_izq
         else:
-            primero, segundo = tenedor_izq, tenedor_der
-            
+            primero = tenedor_izq
+            segundo = tenedor_der
+
         with tenedores[primero]:
             with tenedores[segundo]:
                 comer(id)
